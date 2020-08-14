@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/qgis2web.css"><link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+		#sparks {
+			min-height:20px;
+			height:auto !important;
+			height:20px;
+			width:auto !important;
+			width:300px !important;
+			min-width: 300px;
+		}		
+		#newbox {
+			min-height:20px;
+			height:auto !important;
+			height:20px;
+			width:auto !important;
+			width:400px !important;
+			min-width: 400px;
+		}
+		#citybox {
+			min-height:20px;
+			height:auto !important;
+			height:20px;
+			width:auto !important;
+			width:200px !important;
+			min-width: 200px;
+		}			
+        </style>
+        <title>Canopy Stats</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="data/nyc_patch_web_1.js"></script>
+        <script src="data/nyc_grove_web_3.js"></script>
+        <script src="data/nyc_rpj_4.js"></script>
+        <script src="data/phil_patch_web_6.js"></script>
+        <script src="data/phil_grove_web_7.js"></script>
+        <script src="data/phila_neighborhoods_rpj_9.js"></script>
+        <script src="data/balt_grove_10.js"></script>
+        <script src="data/balt_patch_11.js"></script>
+        <script src="data/balt_neighborhoods_calc_12.js"></script>
+		<script src="js/jquery-3.5.0.min.js"></script>
+		<script src="js/jquery.sparkline.min.js"></script>		
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#0000ff',
+                fillOpacity: 0.3
+              });
+            }       
+			$("#softsparkline").sparkline([0.82,e.target.feature.properties['PERCNOST'],1], {
+				type: 'bullet',
+				targetColor: '#0000ff',
+				performanceColor: '#77dd02',
+				rangeColors: ['#ccfc7e','#a8b6ff','#7f94ff ']});
+			$("#patchsparkline").sparkline([0.69,e.target.feature.properties['PERCPATCH'],1], {
+				type: 'bullet',
+				targetColor: '#0000ff',
+				performanceColor: '#77dd02',
+				rangeColors: ['#ccfc7e','#a8b6ff','#7f94ff ']});
+			$("#grovesparkline").sparkline([0.15,e.target.feature.properties['PERCGROVE'],1], {
+				type: 'bullet',
+				targetColor: '#0000ff',
+				performanceColor: '#77dd02',
+				rangeColors: ['#ccfc7e','#a8b6ff','#7f94ff ']});	
+		}
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:28, minZoom:1
+        }).fitBounds([[39.19285870286506,-76.74678850721531],[39.37636348967239,-76.49429104822686]]);	
+
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        var layer_CartoLight_0 = L.tileLayer('http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 22
+        });
+        layer_CartoLight_0;
+        map.addLayer(layer_CartoLight_0);
+        function pop_nyc_patch_web_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(feature.properties['OBJECTID'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Id'] !== null ? Autolinker.link(feature.properties['Id'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gridcode'] !== null ? Autolinker.link(feature.properties['gridcode'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_Leng'] !== null ? Autolinker.link(feature.properties['Shape_Leng'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_Area'] !== null ? Autolinker.link(feature.properties['Shape_Area'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_nyc_patch_web_1_0() {
+            return {
+                pane: 'pane_nyc_patch_web_1',
+                opacity: 1,
+                color: 'rgba(0,199,92,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,188,122,0.16862745098039217)',
+                interactive: false,
+            }
+        }
+        map.createPane('pane_nyc_patch_web_1');
+        map.getPane('pane_nyc_patch_web_1').style.zIndex = 401;
+        map.getPane('pane_nyc_patch_web_1').style['mix-blend-mode'] = 'normal';
+        var layer_nyc_patch_web_1 = new L.geoJson(json_nyc_patch_web_1, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_nyc_patch_web_1',
+            layerName: 'layer_nyc_patch_web_1',
+            pane: 'pane_nyc_patch_web_1',
+            onEachFeature: pop_nyc_patch_web_1,
+            style: style_nyc_patch_web_1_0,
+        });
+        bounds_group.addLayer(layer_nyc_patch_web_1);
+        map.addLayer(layer_nyc_patch_web_1);
+        var img_nycanopy_2 = 'data/nycanopy_2.png';
+        var img_bounds_nycanopy_2 = [[40.47620732517288,-74.25723930536871],[40.91581349215316,-73.67833455508936]];
+        var layer_nycanopy_2 = new L.imageOverlay(img_nycanopy_2, img_bounds_nycanopy_2);
+        bounds_group.addLayer(layer_nycanopy_2);
+        map.addLayer(layer_nycanopy_2);
+        function pop_nyc_grove_web_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(feature.properties['OBJECTID'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Id'] !== null ? Autolinker.link(feature.properties['Id'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gridcode'] !== null ? Autolinker.link(feature.properties['gridcode'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_Leng'] !== null ? Autolinker.link(feature.properties['Shape_Leng'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_Area'] !== null ? Autolinker.link(feature.properties['Shape_Area'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_nyc_grove_web_3_0() {
+            return {
+                pane: 'pane_nyc_grove_web_3',
+                opacity: 1,
+                color: 'rgba(140,216,102,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(113,225,107,0.25882352941176473)',
+                interactive: false,
+            }
+        }
+        map.createPane('pane_nyc_grove_web_3');
+        map.getPane('pane_nyc_grove_web_3').style.zIndex = 403;
+        map.getPane('pane_nyc_grove_web_3').style['mix-blend-mode'] = 'normal';
+        var layer_nyc_grove_web_3 = new L.geoJson(json_nyc_grove_web_3, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_nyc_grove_web_3',
+            layerName: 'layer_nyc_grove_web_3',
+            pane: 'pane_nyc_grove_web_3',
+            onEachFeature: pop_nyc_grove_web_3,
+            style: style_nyc_grove_web_3_0,
+        });
+        bounds_group.addLayer(layer_nyc_grove_web_3);
+        map.addLayer(layer_nyc_grove_web_3);
+        function pop_nyc_rpj_4(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ntaname'] !== null ? Autolinker.link(feature.properties['ntaname'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">shape_area</th>\
+                        <td>' + (feature.properties['shape_area'] !== null ? Autolinker.link(feature.properties['shape_area'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERCPATCH</th>\
+                        <td>' + (feature.properties['PERCPATCH'] !== null ? Autolinker.link(feature.properties['PERCPATCH'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERCGROVE</th>\
+                        <td>' + (feature.properties['PERCGROVE'] !== null ? Autolinker.link(feature.properties['PERCGROVE'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERCNOST</th>\
+                        <td>' + (feature.properties['PERCNOST'] !== null ? Autolinker.link(feature.properties['PERCNOST'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            //layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_nyc_rpj_4_0() {
+            return {
+                pane: 'pane_nyc_rpj_4',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.2627450980392157)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(141,90,153,0.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_nyc_rpj_4');
+        map.getPane('pane_nyc_rpj_4').style.zIndex = 404;
+        map.getPane('pane_nyc_rpj_4').style['mix-blend-mode'] = 'normal';
+        var layer_nyc_rpj_4 = new L.geoJson(json_nyc_rpj_4, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_nyc_rpj_4',
+            layerName: 'layer_nyc_rpj_4',
+            pane: 'pane_nyc_rpj_4',
+            onEachFeature: pop_nyc_rpj_4,
+            style: style_nyc_rpj_4_0,
+        });
+        bounds_group.addLayer(layer_nyc_rpj_4);
+        map.addLayer(layer_nyc_rpj_4);
+        var img_balt_canopy_5 = 'data/balt_canopy_5.png';
+        var img_bounds_balt_canopy_5 = [[39.197200298138014,-76.71129222427231],[39.37199991501389,-76.52965287382315]];
+        var layer_balt_canopy_5 = new L.imageOverlay(img_balt_canopy_5, img_bounds_balt_canopy_5);
+        bounds_group.addLayer(layer_balt_canopy_5);
+        map.addLayer(layer_balt_canopy_5);
+        function pop_phil_patch_web_6(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(feature.properties['OBJECTID'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Id'] !== null ? Autolinker.link(feature.properties['Id'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gridcode'] !== null ? Autolinker.link(feature.properties['gridcode'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_Leng'] !== null ? Autolinker.link(feature.properties['Shape_Leng'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_Area'] !== null ? Autolinker.link(feature.properties['Shape_Area'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_phil_patch_web_6_0() {
+            return {
+                pane: 'pane_phil_patch_web_6',
+                opacity: 1,
+                color: 'rgba(0,199,92,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,188,122,0.16862745098039217)',
+                interactive: false,
+            }
+        }
+        map.createPane('pane_phil_patch_web_6');
+        map.getPane('pane_phil_patch_web_6').style.zIndex = 406;
+        map.getPane('pane_phil_patch_web_6').style['mix-blend-mode'] = 'normal';
+        var layer_phil_patch_web_6 = new L.geoJson(json_phil_patch_web_6, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_phil_patch_web_6',
+            layerName: 'layer_phil_patch_web_6',
+            pane: 'pane_phil_patch_web_6',
+            onEachFeature: pop_phil_patch_web_6,
+            style: style_phil_patch_web_6_0,
+        });
+        bounds_group.addLayer(layer_phil_patch_web_6);
+        map.addLayer(layer_phil_patch_web_6);
+        function pop_phil_grove_web_7(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? Autolinker.link(feature.properties['OBJECTID'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Id'] !== null ? Autolinker.link(feature.properties['Id'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gridcode'] !== null ? Autolinker.link(feature.properties['gridcode'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_Leng'] !== null ? Autolinker.link(feature.properties['Shape_Leng'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_Area'] !== null ? Autolinker.link(feature.properties['Shape_Area'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_phil_grove_web_7_0() {
+            return {
+                pane: 'pane_phil_grove_web_7',
+                opacity: 1,
+                color: 'rgba(140,216,102,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(113,225,107,0.25882352941176473)',
+                interactive: false,
+            }
+        }
+        map.createPane('pane_phil_grove_web_7');
+        map.getPane('pane_phil_grove_web_7').style.zIndex = 407;
+        map.getPane('pane_phil_grove_web_7').style['mix-blend-mode'] = 'normal';
+        var layer_phil_grove_web_7 = new L.geoJson(json_phil_grove_web_7, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_phil_grove_web_7',
+            layerName: 'layer_phil_grove_web_7',
+            pane: 'pane_phil_grove_web_7',
+            onEachFeature: pop_phil_grove_web_7,
+            style: style_phil_grove_web_7_0,
+        });
+        bounds_group.addLayer(layer_phil_grove_web_7);
+        map.addLayer(layer_phil_grove_web_7);
+        var img_phcanopy_8 = 'data/phcanopy_8.png';
+        var img_bounds_phcanopy_8 = [[39.86129312896773,-75.28416906485799],[40.14379914567165,-74.95403273381918]];
+        var layer_phcanopy_8 = new L.imageOverlay(img_phcanopy_8, img_bounds_phcanopy_8);
+        bounds_group.addLayer(layer_phcanopy_8);
+        map.addLayer(layer_phcanopy_8);
+        function pop_phila_neighborhoods_rpj_9(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MAPNAME'] !== null ? Autolinker.link(feature.properties['MAPNAME'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Shape_Area'] !== null ? Autolinker.link(feature.properties['Shape_Area'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERCPATCH</th>\
+                        <td>' + (feature.properties['PERCPATCH'] !== null ? Autolinker.link(feature.properties['PERCPATCH'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERCGROVE</th>\
+                        <td>' + (feature.properties['PERCGROVE'] !== null ? Autolinker.link(feature.properties['PERCGROVE'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERCNOST</th>\
+                        <td>' + (feature.properties['PERCNOST'] !== null ? Autolinker.link(feature.properties['PERCNOST'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            //layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_phila_neighborhoods_rpj_9_0() {
+            return {
+                pane: 'pane_phila_neighborhoods_rpj_9',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.2627450980392157)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(141,90,153,0.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_phila_neighborhoods_rpj_9');
+        map.getPane('pane_phila_neighborhoods_rpj_9').style.zIndex = 409;
+        map.getPane('pane_phila_neighborhoods_rpj_9').style['mix-blend-mode'] = 'normal';
+        var layer_phila_neighborhoods_rpj_9 = new L.geoJson(json_phila_neighborhoods_rpj_9, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_phila_neighborhoods_rpj_9',
+            layerName: 'layer_phila_neighborhoods_rpj_9',
+            pane: 'pane_phila_neighborhoods_rpj_9',
+            onEachFeature: pop_phila_neighborhoods_rpj_9,
+            style: style_phila_neighborhoods_rpj_9_0,
+        });
+        bounds_group.addLayer(layer_phila_neighborhoods_rpj_9);
+        map.addLayer(layer_phila_neighborhoods_rpj_9);
+        function pop_balt_grove_10(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gridcode'] !== null ? Autolinker.link(feature.properties['gridcode'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_balt_grove_10_0() {
+            return {
+                pane: 'pane_balt_grove_10',
+                opacity: 1,
+                color: 'rgba(140,216,102,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(113,225,107,0.25882352941176473)',
+                interactive: false,
+            }
+        }
+        map.createPane('pane_balt_grove_10');
+        map.getPane('pane_balt_grove_10').style.zIndex = 410;
+        map.getPane('pane_balt_grove_10').style['mix-blend-mode'] = 'normal';
+        var layer_balt_grove_10 = new L.geoJson(json_balt_grove_10, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_balt_grove_10',
+            layerName: 'layer_balt_grove_10',
+            pane: 'pane_balt_grove_10',
+            onEachFeature: pop_balt_grove_10,
+            style: style_balt_grove_10_0,
+        });
+        bounds_group.addLayer(layer_balt_grove_10);
+        map.addLayer(layer_balt_grove_10);
+        function pop_balt_patch_11(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['gridcode'] !== null ? Autolinker.link(feature.properties['gridcode'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_balt_patch_11_0() {
+            return {
+                pane: 'pane_balt_patch_11',
+                opacity: 1,
+                color: 'rgba(0,199,92,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,188,122,0.16862745098039217)',
+                interactive: false,
+            }
+        }
+        map.createPane('pane_balt_patch_11');
+        map.getPane('pane_balt_patch_11').style.zIndex = 411;
+        map.getPane('pane_balt_patch_11').style['mix-blend-mode'] = 'normal';
+        var layer_balt_patch_11 = new L.geoJson(json_balt_patch_11, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_balt_patch_11',
+            layerName: 'layer_balt_patch_11',
+            pane: 'pane_balt_patch_11',
+            onEachFeature: pop_balt_patch_11,
+            style: style_balt_patch_11_0,
+        });
+        bounds_group.addLayer(layer_balt_patch_11);
+        map.addLayer(layer_balt_patch_11);
+        function pop_balt_neighborhoods_calc_12(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (i in e.target._eventParents) {
+                        e.target._eventParents[i].resetStyle(e.target);
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>label</strong><br />' + (feature.properties['label'] !== null ? Autolinker.link(feature.properties['label'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">shape_area</th>\
+                        <td>' + (feature.properties['shape_area'] !== null ? Autolinker.link(feature.properties['shape_area'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">NOSTBLG</th>\
+                        <td>' + (feature.properties['NOSTBLG'] !== null ? Autolinker.link(feature.properties['NOSTBLG'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">GROVE</th>\
+                        <td>' + (feature.properties['GROVE'] !== null ? Autolinker.link(feature.properties['GROVE'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PATCH</th>\
+                        <td>' + (feature.properties['PATCH'] !== null ? Autolinker.link(feature.properties['PATCH'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERCPATCH</th>\
+                        <td>' + (feature.properties['PERCPATCH'] !== null ? Autolinker.link(feature.properties['PERCPATCH'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERCGROVE</th>\
+                        <td>' + (feature.properties['PERCGROVE'] !== null ? Autolinker.link(feature.properties['PERCGROVE'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">PERCNOST</th>\
+                        <td>' + (feature.properties['PERCNOST'] !== null ? Autolinker.link(feature.properties['PERCNOST'].toLocaleString(), {truncate: {length: 30, location: 'smart'}}) : '') + '</td>\
+                    </tr>\
+                </table>';
+            //layer.bindPopup(popupContent, {maxHeight: 400});
+        }
+
+        function style_balt_neighborhoods_calc_12_0() {
+            return {
+                pane: 'pane_balt_neighborhoods_calc_12',
+                opacity: 1,
+                color: 'rgba(35,35,35,0.2627450980392157)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(141,90,153,0.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_balt_neighborhoods_calc_12');
+        map.getPane('pane_balt_neighborhoods_calc_12').style.zIndex = 412;
+        map.getPane('pane_balt_neighborhoods_calc_12').style['mix-blend-mode'] = 'normal';
+        var layer_balt_neighborhoods_calc_12 = new L.geoJson(json_balt_neighborhoods_calc_12, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_balt_neighborhoods_calc_12',
+            layerName: 'layer_balt_neighborhoods_calc_12',
+            pane: 'pane_balt_neighborhoods_calc_12',
+            onEachFeature: pop_balt_neighborhoods_calc_12,
+            style: style_balt_neighborhoods_calc_12_0,
+        });
+        bounds_group.addLayer(layer_balt_neighborhoods_calc_12);
+        map.addLayer(layer_balt_neighborhoods_calc_12);
+            var title = new L.Control();
+            title.onAdd = function (map) {
+                this._div = L.DomUtil.create('div', 'info');
+                this.update();
+                return this._div;
+            };
+            title.update = function () {
+                this._div.innerHTML = '<h2>Canopy Stats</h2><h4>Canopy stats for metropolitan neighborhoods.</h4> By Michelle Katoski';
+            };
+            title.addTo(map);
+
+            var sparks = new L.Control({'position':'bottomleft'});
+            sparks.onAdd = function (map) {
+                this._div = L.DomUtil.create('div',
+                'leaflet-control leaflet-bar sparks');
+                this._div.id = 'sparks'
+
+                    sparks.show();
+                    return this._div;
+                };
+                sparks.show = function () {
+                    this._div.classList.remove("sparks");
+                    this._div.classList.add("abstractUncollapsed");
+                    this._div.innerHTML = '<h3>Classifying Patch and Grove</h3><img src = "images/canopy_types.gif" width = 300 height = 300/><br><h3>Neighborhood canopy summaries</h3> Soft canopy (%): <span id="softsparkline"> </span><br> Patch (%):&emsp;&emsp;&emsp;<span id="patchsparkline"> </span><br> Grove (%):&emsp;&emsp;&ensp; <span id="grovesparkline"> </span><br><br> <strong>Target</strong> = Greatest observed percent cover for catergory <br><strong>Performance</strong> = Observed canopy cover for selected neighborhood ';
+            };
+            sparks.addTo(map);			
+			
+			
+        setBounds();
+        L.ImageOverlay.include({
+            getBounds: function () {
+                return this._bounds;
+            }
+        });
+			var newbox = new L.Control({'position':'topright'});
+            newbox.onAdd = function (map) {
+                this._div = L.DomUtil.create('div',
+                'leaflet-control leaflet-bar newbox');
+                this._div.id = 'newbox'
+
+                    newbox.show();
+                    return this._div;
+                };
+
+                newbox.show = function () {
+                    this._div.classList.remove("newbox");
+                    this._div.classList.add("abstractUncollapsed");
+                    this._div.innerHTML = 'Select a stat <select id="changeImage"><option value="0">Area</option> <option value="1">Height</option> <option value="2">Structure</option></select> <span id = "imageSet"</span>';
+            };
+            newbox.addTo(map);
+			
+			var citybox = new L.Control({'position':'topleft'});
+            citybox.onAdd = function (map) {
+                this._div = L.DomUtil.create('div',
+                'leaflet-control leaflet-bar citybox');
+                this._div.id = 'citybox'
+
+                    citybox.show();
+                    return this._div;
+                };
+				// This is where I add in the click elements
+                citybox.show = function () {
+                    this._div.classList.remove("citybox");
+                    this._div.classList.add("abstractUncollapsed");9
+                    this._div.innerHTML = 'Select a City<br> <select id="story"> <option value="0">Baltimore</option> <option value ="1">New York City</option><option value="2">Philadelphia</option> </select>   ';
+            };
+            citybox.addTo(map);			
+			
+		// Code from online
+		// bind click event to the story divs, add a marker and zoom to that story's location. Remember to add dot before story as it is classname
+		var pointsArray = ["39.285,-76.587", "40.705,-73.799", "40.002,-75.049"];
+		$('#story').change(function(){
+		// parse lat and lng from the divs data attribute
+		var latlng = pointsArray[this.value].split(',');
+		var lat = latlng[0];
+		var lng = latlng[1];
+		var zoom = 11;
+
+		// set the view
+		map.setView([lat, lng], zoom);
+		});	
+		
+		
+        setBounds();
+        L.ImageOverlay.include({
+            getBounds: function () {
+                return this._bounds;
+            }
+        });
+		var imagesArray = [
+			'<br><b>Baltimore City<b> <img src = "images/balt_vio.png" width = 400 height = 170/> <br><b>New York City<b> <img src = "images/nyc_vio.png" width = 400 height = 170 <br><b>Philadelphia<b> <img src = "images/phila_vio.png" width = 400 height = 170/>', // represents val 0,
+			'<br><b>Baltimore City<b> <img src = "images/balt_ht.png" width = 400 height = 200/>', // 1,
+			'<br><b>Baltimore City<b> <img src = "images/ht_deciles.PNG" width = 400 height = 500/>' ]
+		$('#changeImage').change(function(){
+		$('#imageSet')[0].innerHTML = imagesArray[this.value];
+		});	
+
+
+        </script>
+    </body>
+</html>
